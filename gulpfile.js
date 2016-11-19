@@ -5,6 +5,7 @@ var ts = require('gulp-typescript');
 var tsProject = ts.createProject('./config/tsconfig.json');
 var stylus = require('gulp-stylus');
 var bsync = require('browser-sync').create();
+var del = require('del');
 
 gulp.task('bsync:init', (done) => {
     bsync.init({
@@ -40,12 +41,32 @@ gulp.task('compile:stylus', () => {
         )
 });
 
-gulp.task('copy:html', () => {
+gulp.task('copy', () => {
     return gulp
-        .src(source + 'html/**/*.html')
-        .pipe(
-        gulp.dest(dist + 'html/')
+        .src(
+        [
+            'src/**/*',
+            '!src/stylus/**/*',
+            '!src/stylus',
+            '!src/ts/**/*',
+            '!src/ts'
+        ]
         )
+        .pipe(
+        gulp.dest(dist)
+        )
+});
+
+gulp.task('clean', () => {
+    return del(
+        [
+            'dist/**/*',
+            '!dist/css/**/*',
+            '!dist/css',
+            '!dist/js/**/**',
+            '!dist/js'
+        ]
+    );
 });
 
 gulp.task('watch', (done) => {
@@ -58,17 +79,20 @@ gulp.task('watch', (done) => {
         gulp.series('compile:stylus', 'reload')
     );
     gulp.watch(
-        source + 'html/**/*.html',
-        gulp.series('copy:html', 'reload')
+        source + '**/!(*.ts|*.styl)',
+        gulp.series('clean', 'copy', 'reload')
     );
     done();
 })
+
+
 
 gulp.task(
     'default',
     gulp.series(
         'bsync:init',
         'watch',
-        gulp.parallel('compile:typescript', 'compile:stylus', 'copy:html')
+        'clean',
+        gulp.parallel('compile:typescript', 'compile:stylus', 'copy')
     )
 );
